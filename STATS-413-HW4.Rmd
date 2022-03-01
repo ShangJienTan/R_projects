@@ -1,0 +1,80 @@
+---
+title: "STATS-413-HW4"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r lib}
+#install.packages('faraway')
+library(faraway)
+library(ggplot2)
+suppressMessages(library(dplyr))
+suppressMessages(library(GGally))
+suppressMessages(library(ellipse))
+
+data(prostate)
+```
+
+## Q1. a) Compute 90 and 95% CIs for the parameter associated with age. Using just these intervals, what could we have deduced about the p-value for age in the regression summary?
+```{r} 
+Model1= lm(lpsa ~ ., data = prostate)
+summary(Model1)
+confint(Model1, c("age"), .95)
+confint(Model1, c("age"), .90)
+```
+The 90% CI is (-0.0382102, -0.001064151) and 95% CI is (-0.04184062, 0.002566267) for the parameter associated with age.\newline
+Since the age=0 is within the 95% Confidence Interval and not within the 90% Confidence Interval, this suggests that the age parameter is significant at 90% and insignificant at 95%. This makes sense since the p-value of age is 0.08229 which is$>\alpha=0.05$ but $<\alpha=0.1$.  
+
+## Q1. b) Compute and display a 95% joint confidence region for the parameters associated with "age" and "lbph". Plot the origin on this display. The location of the origin on the display tells us the outcome for a certain hypothesis test. State that test and its outcome.
+```{r} 
+plot(ellipse(Model1, c('age', 'lbph')), type = "l", main="Joint Confidence Region")
+points(0, 0, pch = 1)
+abline(v= confint(Model1)['age',], lty = 2)
+abline(h= confint(Model1)['lbph',], lty = 2)
+```
+The joint null hypothesis "age = lbph = 0", can not be rejected because the origin lies inside of the confidence region ellipse.\newline 
+The null hypothesis "age = 0" can not be rejected because 0 lies with the 95% confidence bounds. This is the same for the null hypothesis "lbph = 0".
+
+## Q1. c) Remove all the predictors that are not significant at the 5% level. Test this model against the original model. Which model is preferred?
+```{r} 
+Model2= lm(lpsa ~ lcavol+lweight+age+svi,prostate)
+summary(Model2)
+```
+
+```{r} 
+anova(Model1, Model2)
+```
+Looking at ANOVA, there is not much improvement to the fit in order to be statistically significant when comparing the first model to the second model. If we were to look at the residual, the second model is worse fitting. Thus we would preferred choice.   
+
+## Q2. a) Predict the lpsa for this patient along with an appropriate 95% CI.
+```{r} 
+Model3=lm(lpsa ~ ., data = prostate)
+x=data.frame(lcavol = 1.447, lweight = 3.623, age = 65, lbph=0.300, svi = 0, lcp = -0.799, gleason = 7.0, pgg45 = 15.00) 
+predict(Model3, x, interval="prediction")
+
+```
+The 95% confidence interval for lpsa is (0.9647383  , 3.813534).
+
+## Q2. b) Repeat the last question for a patient with the same values except that he is age 20. Explain why the CI is wider.
+```{r} 
+Model4=lm(lpsa ~ ., data = prostate)
+y=data.frame(lcavol = 1.447, lweight = 3.623, age = 20, lbph=0.300, svi = 0, lcp = -0.799, gleason = 7.0, pgg45 = 15.00)
+predict(Model4, y, interval="prediction")
+```
+This is because the age is an outlier at age=20. It is far away from the mean age which means that we will be less confident about the patient's lpsa value and thus produces a larger confidence interval width.
+
+## Q2. c) For the model of the previous question, remove all the predictors that are not significant at the 5% level. Now recompute the predictions of the previous question. Are the CIs wider or narrower? Which predictions would you prefer? Explain.
+```{r} 
+Model4= lm(lpsa ~ lcavol+lweight+svi,prostate)
+new=data.frame(lcavol=1.447,lweight=3.623,svi = 0) 
+predict(Model4, new, interval="prediction")
+```
+Looking at this new model and the previous model there is not much different in terms of the lower and upper bound of the confidence interval. However, for the new model, we have removed all of the non-significant predictors which would mean that the model would be able to produce more accurate predictions. Thus, I would prefer the newer model.
+
+## Q3. a) Find a formula relating R^2 and the F-test for the regression.
+![formula relating R^2 and the F-test](C:\Users\Asus\OneDrive\Documents\STATS413\HW4\F stats.png)`

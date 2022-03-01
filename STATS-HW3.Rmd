@@ -1,0 +1,167 @@
+---
+title: "STATS-413-HW3"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+```{r lib}
+library(faraway)
+library(ggplot2)
+suppressMessages(library(dplyr))
+suppressMessages(library(GGally))
+suppressMessages(library(MASS))
+suppressMessages(library(corrplot))
+```
+
+```{r}
+#reading the Boston Dataset
+data(Boston)
+str(Boston)
+attach(Boston)
+```
+There are in total 506 observations with 14 variables recorded.
+The following variables were recorded:\newline 
+1. Per capita crime rate by town. (**crim**)\newline  
+2. Proportion of residential land zoned for lots over 25,000 sq.ft.(**zn**)\newline    
+3. Proportion of non-retail business acres per town.(**indus**)\newline   
+4. Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).(**chas**)\newline  
+5. Nitrogen oxides concentration (parts per 10 million).(**nox**)\newline  
+6. Average number of rooms per dwelling. (**rm**)\newline   
+7. Proportion of owner-occupied units built prior to 1940. (**age**)\newline  
+8. Weighted mean of distances to five Boston employment centres. (**dis**)\newline  
+9. Index of accessibility to radial highways (**rad**)\newline  
+10. Full-value property-tax rate per \$10,000. (**tax**)\newline  
+11. Pupil-teacher ratio by town (**ptratio**)\newline  
+12. 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town. (**Black**)\newline  
+13. Lower status of the population (percent).(**lstat**)\newline  
+14. Median value of owner-occupied homes in \$1000s.(**medv**)\newline  
+
+
+```{r function}
+#output function
+lmp <- function (modelobject) {
+    if (class(modelobject) != "lm") stop("Not an object of class 'lm' ")
+    f <- summary(modelobject)$fstatistic
+    p <- pf(f[1],f[2],f[3],lower.tail=F)
+    attributes(p) <- NULL
+    return(p)
+}
+```
+
+# Q1: 
+## Crim (per capita crime rate) vs Zn (proportion of residential land zoned for lots over 25,000 sq.ft)
+```{r}
+linear_fit_zn <- lm(crim ~zn, data=Boston)
+summary(linear_fit_zn)
+```
+Above is a simple linear regression summary for the zn variable. I have excluded the remaining summaries and recorded the p-value and multiple r-squared for each of the variables.
+
+```{r}
+linear_fit_zn <- lm(crim ~zn, data=Boston)
+linear_fit_indus <- lm(crim ~indus, data=Boston)
+linear_fit_chas <- lm(crim ~chas, data=Boston)
+linear_fit_nox <- lm(crim ~nox, data=Boston)
+linear_fit_rm <- lm(crim ~rm, data=Boston)
+linear_fit_age <- lm(crim ~age, data=Boston)
+linear_fit_dis <- lm(crim ~dis, data=Boston)
+linear_fit_rad <- lm(crim ~rad, data=Boston)
+linear_fit_tax <- lm(crim ~tax, data=Boston)
+linear_fit_ptratio <- lm(crim ~ptratio, data=Boston)
+linear_fit_black <- lm(crim ~black, data=Boston)
+linear_fit_lstat <- lm(crim ~lstat, data=Boston)
+linear_fit_medv <- lm(crim ~medv, data=Boston)
+
+Independent_variable <- c("zn","indus","chas","nox","rm","age","dis","rad","tax","ptratio","black","lstat","medv")
+pvalue <- c(lmp(linear_fit_zn),lmp(linear_fit_indus),lmp(linear_fit_chas),lmp(linear_fit_nox),lmp(linear_fit_rm),lmp(linear_fit_age),lmp(linear_fit_dis),lmp(linear_fit_rad),lmp(linear_fit_tax),lmp(linear_fit_ptratio),lmp(linear_fit_black),lmp(linear_fit_lstat),lmp(linear_fit_medv))
+Rsquared <- c(summary(linear_fit_zn)$r.squared,summary(linear_fit_indus)$r.squared,summary(linear_fit_chas)$r.squared,summary(linear_fit_nox)$r.squared,summary(linear_fit_rm)$r.squared,summary(linear_fit_age)$r.squared,summary(linear_fit_dis)$r.squared,summary(linear_fit_rad)$r.squared,summary(linear_fit_tax)$r.squared,summary(linear_fit_ptratio)$r.squared,summary(linear_fit_black)$r.squared,summary(linear_fit_lstat)$r.squared,summary(linear_fit_medv)$r.squared)
+
+df <- data.frame(Independent_variable, pvalue, Rsquared)
+print(df)
+
+```
+In the table above we can see that all of the p-values are statistically significant except for chas.
+
+## Plot
+```{r}
+par(mfrow=c(1,2))
+plot(zn,crim, main = "Crim vs Zn")
+abline(linear_fit_zn)
+plot(chas,crim, main = "Crim vs Chas")
+abline(linear_fit_chas)
+
+```
+The 2 graphs show the variables that have the highest p-value out of the independent variables. Zn has the p-value of 5.506472e-06 and chas has a p-value of 0.209.\newline
+Since the p-value of the crim vs zn model is less than a=0.05, we can conclude that there is a statistically significant association between crim and zn. Meanwhile the p-value of Crim vs Chas is more than a=0.05 which means that the chances of having a null hypothesis are high and therefore Chas is not statistically significant. \newline
+Looking at the graph, there is a negative relationship between Crim and Zn while the there is only a slight negative relationship between Crim and Chas. This makes sense because Chas is only a dummy variable and probably does not have anything related to the crime rate.
+
+# Q2:
+```{r}
+multi_fit<- lm(crim ~.,data = Boston)
+summary(multi_fit)
+```
+Looking at the plot, assuming that the statistical significant level is a=0.05, we can reject the null hypothesis with predictors zn, dis, rad, black and medv. \newline
+The other variables cannot reject the null hypothesis. \newline
+It is important to point out that the Multiple R-squared for this multiple regression model is 0.454 which is very low, which suggests that this multiple regression model doesn't fit the dataset well.
+
+# Q3:
+```{r}
+univariate <- vector("numeric",0)
+univariate <- c(univariate, linear_fit_zn$coefficient[2])
+univariate <- c(univariate, linear_fit_indus$coefficient[2])
+univariate <- c(univariate, linear_fit_chas$coefficient[2])
+univariate <- c(univariate, linear_fit_nox$coefficient[2])
+univariate <- c(univariate, linear_fit_rm$coefficient[2])
+univariate <- c(univariate, linear_fit_age$coefficient[2])
+univariate <- c(univariate, linear_fit_dis$coefficient[2])
+univariate <- c(univariate, linear_fit_rad$coefficient[2])
+univariate <- c(univariate, linear_fit_tax$coefficient[2])
+univariate <- c(univariate, linear_fit_ptratio$coefficient[2])
+univariate <- c(univariate, linear_fit_black$coefficient[2])
+univariate <- c(univariate, linear_fit_lstat$coefficient[2])
+univariate <- c(univariate, linear_fit_medv$coefficient[2])
+multiple <- vector("numeric", 0)
+multiple <- c(multiple, multi_fit$coefficients)
+multiple <- multiple[-1]
+
+plot(univariate, multiple, ylab = "multiple regression coefficients", xlab = "Univariate Regression coefficients", main = "Relationship between Multiple regression \n and univariate regression coefficients")
+```
+Looking at the graph, there appears to be a distinct difference between the Univariate and multiple regression coefficients. This is because the slope of the simple regression model represents the average effect of an increase in the predictor while ignoring the other predictors in the dataset. But multiple regression holds other predictors constant and the slope represents the average effect of an increase in the predictor. \newline
+
+```{r}
+corr <-round(cor(Boston[-c(1,4)]),3)
+corrplot(corr, method = "number")
+```
+There appears to be no relationship between crime rate and most of the predictors when it comes to multiple linear regression. \newline
+However, that is not the case when it comes to simple regression. The graph above suggests that there is strong relationship between some of the predictors for simple linear regression.
+
+# Q4:
+```{r}
+multi_zn <- lm(crim~ zn + I(zn^2) +I(zn^3))
+summary( multi_zn)
+```
+Above is a non-linear regression summary fitted to the $y = \beta_0 + \beta_1x + \beta_2x_2 + \beta_3x_3 + \epsilon$. I have excluded the remaining summaries and recorded the p-value and multiple r-squared for each of the variables.
+
+**lm(crim ~ zn + I(znˆ2) + I(znˆ3))**: **p-values**(zn, znˆ2, znˆ3) = 0.00261, 0.09375, 0.22954, **R-squared** = 0.05824 \newline
+**lm(crim ~ indus + I(indusˆ2) + I(indusˆ3))**: **p-values**(indus, indusˆ2, indusˆ3) = 5.30e-05, 3.42e10, 1.20e-12, **R-squared**= 0.2597 \newline
+**lm(crim ~ nox + I(noxˆ2) + I(noxˆ3))**: **p-values**(nox, noxˆ2, noxˆ3) = 0.2118, 0.3641, 0.5086, **R-squared** = 0.297 \newline
+**lm(crim ~ rm + I(rmˆ2) + I(rmˆ3))**: **p-values**(rm, rmˆ2, rmˆ3) = 2.76e-13, 6.81e-15, 6.96e-16, **R-squared** = 0.06779 \newline
+**lm(crim ~ age + I(ageˆ2) + I(ageˆ3))**: **p-values**(age, ageˆ2, ageˆ3) = 0.14266, 0.04738, 0.00668, **R-squared** = 0.1742 \newline
+**lm(crim ~ dis + I(disˆ2) + I(disˆ3))**: **p-values**(dis, disˆ2, disˆ3) = <2e-16, 4.94e-12, 1.09e-08, **R-squared** = 0.2778 \newline
+**lm(crim ~ rad + I(radˆ2) + I(radˆ3))**: **p-values**(rad, radˆ2, radˆ3) = 0.623, 0.613, 0.482, **R-squared** = 0.4 \newline
+**lm(crim ~ tax + I(taxˆ2) + I(taxˆ3))**: **p-values**(tax, taxˆ2, taxˆ3) = 0.110, 0.137, 0.244, **R-squared** = 0.3689 \newline
+**lm(crim ~ ptratio + I(ptratioˆ2) + I(ptratioˆ3))**: **p-values**(ptratio, ptratioˆ2, ptratioˆ3) = 0.00303, 0.00412, 0.00630, **R-squared** = 0.1138 \newline
+**lm(crim ~ black + I(blackˆ2) + I(blackˆ3))**: **p-values**(black, blackˆ2, blackˆ3) = 0.139, 0.474, 0.544, **R-squared** = 0.1498 \newline
+**lm(crim ~ lstat + I(lstatˆ2) + I(lstatˆ3))**: **p-values**(lstat, lstatˆ2, lstatˆ3) = 0.3345, 0.0646, 0.1299, **R-squared** = 0.2179 \newline
+**lm(crim ~ medv + I(medvˆ2) + I(medvˆ3))**: **p-values**(medv, medvˆ2, medvˆ3) = <2e-16, <2e-16, 1.05e-12, **R-squared** = 0.4202 \newline
+
+From the p-values and R-squared values above, the  predictors indus, nox, age, dis, ptratio, and medv have p-values that suggests that the cubic coefficients are statistically significant. \newline
+Meanwhile, the predictors zn, rm, rad, tax, and lstat all have p-values that suggest that the cubic coefficients are not statistically significant. \newline
+For the black predictor, the p-values that suggest that the quadratic and cubic coefficients are not significant.
+

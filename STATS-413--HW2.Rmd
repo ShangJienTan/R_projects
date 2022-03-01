@@ -1,0 +1,190 @@
+---
+title: "Stats 413- HW2"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r lib}
+#install.packages('faraway')
+library(faraway)
+library(ggplot2)
+suppressMessages(library(dplyr))
+suppressMessages(library(GGally))
+
+data(teengamb)
+attach(teengamb)
+```
+
+# Question 1:
+```{r data}
+output = lm(gamble ~ sex+status+income+verbal)
+teengamb$sex = factor(teengamb$sex)
+levels(teengamb$sex) = c("male", "female")
+```
+## (a) What percentage of variation in the response is explained by these predictors?
+The percentage of variation in the response can be found in the multiple R-squared: 0.5267.
+
+## (b) Which observation has the largest (positive) residual? Give the case number.
+```{r}
+max(output$residuals);
+which.max(output$residuals)
+paste("The case number with the largest positive residual is" , which.max(output$residuals), "with the residual of", max(output$residuals)) 
+```
+
+## (c) Compute the mean and median of the residuals.
+MEAN:
+```{r}
+mean(output$residuals) 
+```
+MEDIAN:
+```{r}
+median(output$residuals) 
+```
+
+## (d) Compute the correlation of the residuals with the fitted values.
+```{r}
+cor(output$residuals, output$fitted.values)
+```
+
+## (e) Compute the correlation of the residuals with the income.
+```{r}
+cor(output$residuals, teengamb$income)
+```
+
+## (f) For all other predictors held constant, what would be the difference in predicted expenditure on gambling for a male compared to a female?
+```{r}
+output$coefficients
+```
+By looking at the coefficient of sex, we can conclude that on average, teenage females spent $22.1183301 less on gamble than teenage males.
+
+# Question 2:
+```{r}
+data(prostate)
+str(prostate)
+fitmodel = data.frame(value=integer(), residual=numeric(), r2=numeric())
+```
+There are in total 97 observations with 9 variables recorded.
+The following variables were recorded:\newline 
+1. log of cancer volume(**lcavol**)\newline  
+2. log of prostate weight(**lweight**)\newline  
+3. **age**, \newline
+4. log of benign prostatic hyperplasia amount(**lbph**)\newline 
+5. seminal vesicle invasion (**svi**)\newline 
+6. log of capsular penetration(**lcp**)\newline  
+7. Gleason score(**gleason**)\newline 
+8. percentage Gleason scores 4 or 5 (**pgg45**)\newline 
+9. log of prostate specific antigen(**lpsa**)
+
+# Numerical summary
+```{r}
+summary(prostate)
+```
+According to the summary of the prostate data, it looks like lcavol, age, lbph, gleason and lpsa are left skewed while lweight, svi, lcp, pgg45 is right skewed. We can also see that svi has a min value of 0 and a max value 1. This could mean that svi might be a categorical data set or maybe a binary data set. Furthermore, looking at the age, it seems that the participants have a minimum and maximum age between 41 and 79 which suggests that the participants are in the older age range.
+
+# Graphical Summary
+## Univariable plot
+```{r}
+hist(prostate$lpsa)
+```
+For the univariable plot, I choose to plot a histogram for it because it is the response variable. Just by looking at it, it is a symmetric, uni-modal histogram plot with little skewness. This also suggests that it can be modeled as a normal distribution.   
+
+## Bivariable plot
+```{r}
+ggpairs(prostate)
+```
+Looking at the pairs data there are some interesting characteristics that we can infer about the relations between each data point. For example, we can tell that SVI and gleason might be categorical in nature, with SVI specifically being binary as its data value are either 0 or 1. Furthermore, we can see that lcavol and lpsa have a positive correlation of 0.734.
+
+```{r}
+prostatefit = lm(lpsa ~ lcavol, data=prostate)
+rsquared =  summary(prostatefit)$r.squared
+residual = summary(prostatefit)$sigma
+fitmodel = rbind(list(num= 1, residual=residual, r2=rsquared), fitmodel)
+```
+
+```{r}
+prostatefit = lm(lpsa ~ lcavol + lweight , data=prostate)
+residual = summary(prostatefit)$sigma
+rsquared =  summary(prostatefit)$r.squared
+
+fitmodel = rbind(list(num= 2, residual=residual, r2=rsquared), fitmodel)
+```
+
+```{r}
+prostatefit = lm(lpsa ~ lcavol + lweight + svi , data=prostate)
+residual = summary(prostatefit)$sigma
+rsquared =  summary(prostatefit)$r.squared
+
+fitmodel = rbind(list(num= 3, residual=residual, r2=rsquared), fitmodel)
+```
+
+
+```{r}
+prostatefit = lm(lpsa ~ lcavol + lweight + svi + lbph, data=prostate)
+residual = summary(prostatefit)$sigma
+rsquared =  summary(prostatefit)$r.squared
+
+fitmodel = rbind(list(num= 4, residual=residual, r2=rsquared), fitmodel)
+```
+
+
+```{r}
+prostatefit = lm(lpsa ~ lcavol + lweight + svi + lbph + age, data=prostate)
+residual = summary(prostatefit)$sigma
+rsquared =  summary(prostatefit)$r.squared
+
+fitmodel = rbind(list(num= 5, residual=residual, r2=rsquared), fitmodel)
+```
+
+
+```{r}
+prostatefit = lm(lpsa ~ lcavol + lweight + svi + lbph + age + lcp, data=prostate)
+residual = summary(prostatefit)$sigma
+rsquared =  summary(prostatefit)$r.squared
+
+fitmodel = rbind(list(num= 6, residual=residual, r2=rsquared), fitmodel)
+```
+
+
+```{r}
+prostatefit = lm(lpsa ~ lcavol + lweight + svi + lbph + age + lcp + pgg45, data=prostate)
+residual = summary(prostatefit)$sigma
+rsquared =  summary(prostatefit)$r.squared
+
+fitmodel = rbind(list(num= 7, residual=residual, r2=rsquared), fitmodel)
+```
+
+## Summary of lpsa ~ lcavol + lweight + svi + lbph + age + lcp + pgg45 + gleason
+```{r}
+prostatefit = lm(lpsa ~ lcavol + lweight + svi + lbph + age + lcp + pgg45 + gleason, data=prostate)
+residual = summary(prostatefit)$sigma
+rsquared =  summary(prostatefit)$r.squared
+
+fitmodel = rbind(list(num= 8, residual=residual, r2=rsquared), fitmodel)
+summary(prostatefit)
+```
+Just by looking at the summary of lpsa ~ lcavol + lweight + svi + lbph + age + lcp + pgg45 + gleason, the residual standard error is 0.7084 and has 88 degrees of freedom. With 0.6548 for the multiple R-squared, this suggests that for this model, 65.48% of the values can be explained by the model.
+
+```{r}
+plot= ggplot(fitmodel, aes(num)) + 
+    geom_point(aes(y = r2, col = "R suqared")) + 
+    geom_line(aes(y = r2, col = "R suqared")) +
+    geom_point(aes(y = residual, col = "Residual")) +
+    geom_line(aes(y = residual, col = "Residual")) + ggtitle("Residual & Rsquared over number of predictors") + theme(plot.title = element_text(hjust = 0.5, face="bold")) +labs(y= "Value", x = "Number of Predictors")
+
+print(plot + labs(colour = "Legend"))
+```
+Looking at the graph of Residual & R-squared over number of predictors, it seems that residual and R-squared have opposite relation as number of predictors increased. The R squared have a positive relationship with the number of predictors as we can see it increasing with a logarithmic shape as number of predictors increase. The Residual have a negative relationship with the number of predictors as we can see it decreasing with a logarithmic shape as number of predictors increase. \newline
+This makes sense due to the relationship of increasing the number of predictors have on the model an how it affects the R squared and Residual. Increasing the number of predictors improves the quality of the fit which reduces variance and thus reduces Residual. The reason why it has a logarithmic relationship is due to the law of diminishing. \newline
+Meanwhile, since R-squared indicates how much variation of a dependent variable is explained by the independent variable(s) in a regression model, it would make sense that increasing the number of predictors would increase R squared. This is because  since more predictors would result mean that the model will be able to fit the model better.
+
+
+# Question 3
+![Matrix of Regression coefficient](C:\Users\Asus\OneDrive\Documents\STATS413\HW2\hw2-3.jpg)`
+
+

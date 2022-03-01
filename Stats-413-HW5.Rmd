@@ -1,0 +1,109 @@
+---
+title: "Stats-413-HW5"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r lib}
+library(faraway)
+library(ggplot2)
+suppressMessages(library(dplyr))
+suppressMessages(library(GGally))
+suppressMessages(library(MASS))
+suppressMessages(library(corrplot))
+```
+
+# Q1
+```{r}
+#reading the SAT Dataset
+data(sat)
+```
+
+## Numerical summary
+```{r}
+summary(sat)
+```
+There are in total 50 observations with 7 variables recorded.
+The following variables were recorded:\newline 
+1. Current expenditure per pupil in average daily attendance in public elementary and secondary schools, 1994-95 (in thousands of dollars)(**expand**)\newline  
+2. Average pupil/teacher ratio in public elementary and secondary schools, Fall 1994(**ratio**)\newline  
+3. Estimated average annual salary of teachers in public elementary and secondary schools, 1994-95 (in thousands of dollars)(**salary**), \newline
+4. Percentage of all eligible students taking the SAT, 1994-95(**takers**)\newline 
+5. Average verbal SAT score, 1994-95(**verbal**)\newline 
+6. Average math SAT score, 1994-95(**math**)\newline  
+7. Average total score on the SAT, 1994-95(**total**)\newline 
+According to the summary of the sat data, all of the variables are right skewed. Looking at the SAT scores, the median of the Math SAT score is larger than the verbal SAT score.
+
+## (a) Check the constant variance assumption for the errors.
+```{r}
+par(mfrow=c(1,3))
+lm = lm(total ~ expend + salary + ratio + takers, data = sat)
+plot(fitted(lm), residuals(lm), xlab = "Fitted", ylab = "Residuals")
+abline(h=0)
+plot(fitted(lm),abs(residuals(lm)),xlab="Fitted",ylab="|Residuals|",main = "SAT: Fitted vs. abs(Residuals)")
+plot(fitted(lm),sqrt(abs(residuals(lm))), xlab="Fitted",ylab=expression(sqrt(hat(epsilon))),main="SAT: fittted vs. sqrt(residuals)")
+
+```
+Looking at the Residual vs. Fitted plit, we can see that the while there are some non-linearity, the variance seems to be relatively constant along the range of the fitted value.
+
+## (b) Check the normality assumption.
+```{r}
+qqnorm(residuals(lm),ylab="Residuals",main="Q-Q Plot of Residuals")
+qqline(residuals(lm))
+```
+The residual looks normally distributed in the middle of the range but it starts to deviate further into the range and becomes slightly right skewed.
+
+## (c) Check for large leverage points. 
+```{r}
+hat = hatvalues(lm)
+states = row.names(sat)
+halfnorm(hat,labs=states,ylab="Leverages")
+```
+Utah and California have the highest leverages.
+
+## (d) Check for outliers.
+```{r}
+stud <- rstudent(lm)
+stud[which.max(abs(stud))]
+qt(0.05/(50*2),44)
+```
+Since -3.124428  > -3.525801, we conclude that West Virginia is an outlier.
+
+## (e) Check for influential points.
+```{r}
+cook = cooks.distance(lm)
+halfnorm(cook, 3, labs = states, ylab = "Cook's distance")
+new_lm= lm(total ~ expend + salary + ratio + takers, data = sat, subset = (cook < max(cook)))
+```
+Utah has the largest Cook’s Distance. Omitting Utah from the data causes “ratio” to become significant at 95% confidence. There are significant changes to the betas when Utah is excluded from the analysis.
+
+## (f) Check the structure of the relationship between the predictors and the response.
+```{r}
+par(mfrow=c(2,2))
+termplot(lm,partial.resid = T)
+```
+Looking at the partial of expend, salary and ratio have weak linear relationship which indicate that they are not significant except for takers. Thus we could drop the three variables and keep takers.
+
+# Q2.
+## (a)
+![leverage proof](C:\Users\Asus\OneDrive\Documents\STATS413\HW5\Lev.png)`
+
+## (b) In a two-dimensional plot of the response versus the predictor in a simple linear regression problem, explain how high leverage points can be identified.
+Since $var=\hat{\epsilon_i}=\sigma^2(1-h_i)$, a large leverage, $h_i$, will make the $var\hat{\epsilon_i}$. High leverage points can be identified by observations that are on the extreme right or left on a scatter plot. The location of points in x space determines their leverage on the regression model, which is measured by the diagonal elements $h_{ii}$ of the hat matrix: 
+$$H = X(X'X)^{-1}X'$$
+
+## (c) Make up a data set in simple linear regression (in particular, x1, x2, . . . , xn) so that the value of the leverage for one of the observations is equal to 1.
+```{r}
+lev_ex = data.frame(
+  x1 = c(0),
+  x2 = c(1),
+  y  = c(11))
+lev_ex
+lev_fit = lm(y ~ ., data = lev_ex)
+paste("The leverage for this data set is", hatvalues(lev_fit))
+```

@@ -1,0 +1,112 @@
+---
+title: "Stats-413-HW6"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r lib}
+library(faraway)
+library(ggplot2)
+library(FNN)
+suppressMessages(library(dplyr))
+suppressMessages(library(GGally))
+suppressMessages(library(MASS))
+suppressMessages(library(corrplot))
+library(ISLR2)
+```
+
+## Q5a.
+```{r}
+data("prostate")
+p_lm = lm(lpsa~. , data=prostate)
+summary(p_lm)
+
+x = model.matrix(p_lm)[,-1]
+e = eigen(t(x) %*% x)
+e$val
+
+sqrt(e$val[1]/e$val)
+```
+There is a wide range in the eigenvalues and several condition numbers are large. \newline
+This means that problems are being caused by more than just one linear combination.
+
+## Q5b.
+```{r}
+round(cor(prostate[,-9]),2)
+```
+The variables that are strongly correlated with each other are: \newline
+1. svi and lcp, \newline
+2. lcp and lcavol, \newline
+3. gleason and pgg45
+
+## Q5c.
+```{r}
+vif(p_lm)
+```
+There doesn't seem to be any inflation of variance. Thus, I can conclude that there is no evidence that col-linearity is causing predictors to be significant.
+
+## Q6a.
+```{r}
+data("cheddar")
+c_lm = lm(taste~., data=cheddar)
+summary(c_lm)
+```
+Looking at the p-value of Lactic, Lactic is statistically significant in this model at significance level=0.05.
+
+## Q6b.
+```{r}
+summary = summary(c_lm)
+p_value = summary$coef["Lactic","Pr(>|t|)"]
+p_value
+```
+
+## Q6c.
+```{r}
+cheddar_new = cheddar
+n = nrow(cheddar_new)
+cheddar_new$Lactic_new = cheddar_new$Lactic + rnorm(n, mean = 0, sd = 0.01)
+
+##refit the model
+fit_new = lm(taste~ Acetic + H2S + Lactic_new, data = cheddar_new)
+fit_summary = summary(fit_new)
+fit_summary
+
+p = fit_summary$coef["Lactic_new","Pr(>|t|)"]
+paste("The p-value of for the previous test is", p)
+```
+
+## Q6d.
+```{r}
+p_list <- rep(0,1000)
+
+for (i in 1:1000){
+cheddar_new$Lactic_new <- cheddar_new$Lactic + rnorm(n, mean = 0, sd = 0.01)
+fit_new = lm(taste~ Acetic + H2S + Lactic_new, data = cheddar_new)
+fit_summary = summary(fit_new)
+p_list[i] = fit_summary$coef["Lactic_new","Pr(>|t|)"]
+}
+
+mean(p_list)
+```
+The measurement error did not make enough of a difference to the p-value to make a significant change to the conclusions.
+
+## Q6e.
+```{r}
+p_list <- rep(0,1000)
+
+for (i in 1:1000){
+cheddar_new$Lactic_new <- cheddar_new$Lactic + rnorm(n, mean = 0, sd = 0.1)
+fit_new = lm(taste~ Acetic + H2S + Lactic_new, data = cheddar_new)
+fit_summary = summary(fit_new)
+p_list[i] = fit_summary$coef["Lactic_new","Pr(>|t|)"]
+}
+
+mean(p_list)
+```
+The change of standard deviation from 0.01 to 0.1 has increased the mean p-value. Since the p-value has increased significantly higher than 0.05, the measurement error make a difference.
+

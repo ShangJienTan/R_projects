@@ -1,0 +1,82 @@
+---
+title: "STATS413-HW1"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Question 1:
+```{r}
+#install.packages('faraway')
+library(faraway)
+data(teengamb)
+```
+
+## Summary (Changed sex from 1 and 0 to make and female)
+```{r}
+teengamb$sex = factor(teengamb$sex)
+levels(teengamb$sex) = c("male", "female")
+summary(teengamb)
+```
+
+## Box plot sex vs gambling spending
+```{r boxplot}
+#Side-by-side box plot of male gambling spending vs female gambling spending
+library(ggplot2)
+ggplot(teengamb, aes(x = sex, y = gamble))+ geom_boxplot()
+```
+Looking at the boxplot, the median level of expenditure of gambling for male is higher than that of female. Furthermore, the variability of expenditure of gambling of male is greater than the variability of the one for female.
+
+## Histogram of gambling expenditure
+```{r histogram}
+#Histogram of frequency of Gambling Expenditure
+hist(teengamb$gamble, xlab = "GAMBLING EXPENDITURE", ylab = "Frequency", main = "Histogram of frequency of Gambling Expenditure")
+
+```
+The histogram suggests that the data is positive skewed. Thus suggests that most teenagers are not big gamblers and do not spend a lot of money, except for the outlier.
+
+## Seperate the data by genders
+```{r gender seperate}
+Male= teengamb$gamble[teengamb$sex=="male"]
+Female= teengamb$gamble[teengamb$sex=="female"]
+```
+
+### Male data summary
+```{r male summary}
+summary(Male)
+var(Male)
+```
+
+### female data summary
+```{r female summary}
+summary(Female)
+var(Female)
+```
+Looking at the data, it seems that there are more male participants compare to female participants in the study. Furthermore, male has a larger mean spending compare to female. This suggests that the hypothesis that male gambles more than females.
+
+# Question 2:
+## Summary of Professor rating
+```{r Q2}
+profrate = read.csv(file = "rate_prof.csv") 
+
+#Summary of rate_prof csv
+summary(profrate)
+
+```
+## Correlation
+```{r corr}
+#Pair wise correlation
+cor(profrate[,9:13])
+
+```
+
+## Scatterplot
+```{r scatterplot}
+#Pair wise scatter plot
+pairs(profrate[,9:13])
+```
+
